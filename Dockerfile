@@ -7,9 +7,10 @@ ARG RUBBERBAND_VERSION=2.0.2
 ARG RUBBERBAND_URL="https://breakfastquay.com/files/releases/rubberband-$RUBBERBAND_VERSION.tar.bz2"
 ARG RUBBERBAND_SHA256=b9eac027e797789ae99611c9eaeaf1c3a44cc804f9c8a0441a0d1d26f3d6bdf9
 
-# bump: alpine /FROM alpine:([\d.]+)/ docker:alpine|^3
-# bump: alpine link "Release notes" https://alpinelinux.org/posts/Alpine-$LATEST-released.html
-FROM alpine:3.16.2 AS base
+# Must be specified
+ARG ALPINE_VERSION
+
+FROM alpine:${ALPINE_VERSION} AS base
 
 FROM base AS download
 ARG RUBBERBAND_URL
@@ -31,10 +32,15 @@ COPY --from=download /tmp/rubberband/ /tmp/rubberband/
 WORKDIR /tmp/rubberband
 RUN \
   apk add --no-cache --virtual build \
-    build-base meson ninja fftw-dev libsamplerate-dev && \
+    build-base meson ninja pkgconf fftw-dev libsamplerate-dev && \
   meson -Ddefault_library=static -Dfft=fftw -Dresampler=libsamplerate build && \
   ninja -j$(nproc) -vC build install && \
   echo "Requires.private: fftw3 samplerate" >> /usr/local/lib/pkgconfig/rubberband.pc && \
+  # Sanity tests
+  pkg-config --exists --modversion --path rubberband && \
+  ar -t /usr/local/lib/librubberband.a && \
+  readelf -h /usr/local/lib/librubberband.a && \
+  # Cleanup
   apk del build
 
 FROM scratch
