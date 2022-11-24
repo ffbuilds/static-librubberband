@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 
 # bump: rubberband /RUBBERBAND_VERSION=([\d.]+)/ https://github.com/breakfastquay/rubberband.git|^2
 # bump: rubberband after ./hashupdate Dockerfile RUBBERBAND $LATEST
